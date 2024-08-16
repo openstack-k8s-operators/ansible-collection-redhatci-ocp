@@ -30,13 +30,21 @@
         } | to_json
       }}'
 
-- name: Assign api_vip and ingress_vip of not doing SNO
+- name: Assign api_vip and ingress_vip if not doing SNO for OCP < 4.15
   set_fact:
     create_body_extras: "{{ create_body_extras | combine({
         'api_vip': api_vip,
         'ingress_vip': ingress_vip,
       }) }}"
-  when: not (single_node_openshift_enabled | bool)
+  when: not (single_node_openshift_enabled | bool) and openshift_version is version( "4.15" , "<")
+
+- name: Assign api_vips and ingress_vips if not doing SNO for OCP >= 4.15
+  set_fact:
+    create_body_extras: "{{ create_body_extras | combine({
+        'api_vips': [{'ip': api_vip}],
+        'ingress_vips': [{'ip': ingress_vip}],
+      }) }}"
+  when: not (single_node_openshift_enabled | bool) and openshift_version is version( "4.15" , ">=")
 
 - name: Assign schedulable_masters if cluster has workers
   set_fact:
